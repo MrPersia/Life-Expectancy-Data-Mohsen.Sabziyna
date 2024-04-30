@@ -29,13 +29,16 @@ def predict_life_expectancy(input_data):
 st.title('Lebenserwartungs-Vorhersagemodell')
 st.write('Bitte geben Sie die erforderlichen Informationen ein, um die Lebenserwartung vorherzusagen')
 
-# Eingabefelder für jedes numerische Feature erstellen
+# Laden der Daten
 data = pd.read_csv("Life Expectancy Data.csv")
-numerical_features = data.select_dtypes(include=['float64', 'int64']).columns
 
+# Eingabefelder für jedes Feature erstellen
 input_data = {}
-for feature in numerical_features:
-    input_data[feature] = st.number_input(f'{feature}', value=data[feature].mean())
+for column in data.columns:
+    if data[column].dtype == 'object':
+        input_data[column] = st.selectbox(f'Wähle {column}', data[column].unique())
+    else:
+        input_data[column] = st.number_input(f'Gib {column} ein', value=data[column].mean())
 
 # Button zur Vorhersage
 if st.button('Lebenserwartung vorhersagen'):
