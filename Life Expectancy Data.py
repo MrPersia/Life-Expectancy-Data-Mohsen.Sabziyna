@@ -29,17 +29,17 @@ def predict_life_expectancy(input_data):
 st.title('Lebenserwartungs-Vorhersagemodell')
 st.write('Bitte geben Sie die erforderlichen Informationen ein, um die Lebenserwartung vorherzusagen')
 
-# Eingabefelder für jedes Feature erstellen
-# Füge hier Eingabefelder für jedes Feature hinzu, das dein Modell verwendet. Beispiel:
-age = st.number_input('Alter', min_value=0, max_value=120, value=30)
-bmi = st.number_input('BMI', min_value=10.0, max_value=50.0, value=22.0)
-# Füge weitere Eingabefelder gemäß deinem Datensatz hinzu
+# Eingabefelder für jedes numerische Feature erstellen
+data = pd.read_csv("Life Expectancy Data.csv")
+numerical_features = data.select_dtypes(include=['float64', 'int64']).columns
+
+input_data = {}
+for feature in numerical_features:
+    input_data[feature] = st.number_input(f'{feature}', value=data[feature].mean())
 
 # Button zur Vorhersage
 if st.button('Lebenserwartung vorhersagen'):
-    input_data = {'Age': age, 'BMI': bmi}  # Füge hier alle deine Features hinzu
     prediction = predict_life_expectancy(input_data)
     st.write(f'Vorhergesagte Lebenserwartung: {prediction:.2f} Jahre')
 
 # Denke daran, die Eingabefelder entsprechend den Features anzupassen, die dein Modell erfordert
-
