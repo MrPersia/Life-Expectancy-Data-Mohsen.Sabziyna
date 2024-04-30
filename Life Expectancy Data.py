@@ -1,59 +1,46 @@
 import streamlit as st
 import pandas as pd
+import pickle
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.impute import IterativeImputer
 
-# Daten laden und vorverarbeiten
+# Laden der Daten
 @st.cache
 def load_data():
     data = pd.read_csv("Life Expectancy Data.csv")
-
-    # Numerische Spalten imputieren
-    numerical_columns = data.select_dtypes(include=['number']).columns
-    imputer = IterativeImputer()
-    data_imputed = data.copy() 
-    data_imputed[numerical_columns] = imputer.fit_transform(data[numerical_columns])
-
-    return data_imputed
+    return data
 
 data = load_data()
 
-# Feature- und Zielvariablen definieren
+# Features und Zielvariable
 X = data.drop(['Life expectancy '], axis=1)
 y = data['Life expectancy ']
 
-# Kategorische Variablen kodieren
-label_encoder = LabelEncoder()
-for column in X.select_dtypes(include=['object']).columns:
-    X[column] = label_encoder.fit_transform(X[column])
+# Modell initialisieren und trainieren
+rf_regressor = RandomForestRegressor(random_state=42)
+rf_regressor.fit(X, y)
 
-# Skalierung der Features
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+# Funktion zur Vorhersage der Lebenserwartung
+def predict_life_expectancy(input_data):
+    # Konvertierung der Eingabedaten in ein DataFrame
+    input_df = pd.DataFrame([input_data])
+    
+    # Vorhersage machen
+    prediction = rf_regressor.predict(input_df)
+    return prediction[0]
 
-# Modell laden
-@st.cache(allow_output_mutation=True)
-def load_model():
-    model = RandomForestRegressor(random_state=42)
-    model.fit(X_scaled, y)
-    return model
+# Streamlit-Interface einrichten
+st.title('Lebenserwartungs-Vorhersagemodell')
+st.write('Bitte geben Sie die erforderlichen Informationen ein, um die Lebenserwartung vorherzusagen')
 
-model = load_model()
+# Eingabefelder für jedes Feature erstellen
+input_data = {}
+for column in X.columns:
+    if X[column].dtype == 'object':
+        input_data[column] = st.selectbox(f'Wähle {column}', X[column].unique())
+    else:
+        input_data[column] = st.number_input(f'Gib {column} ein', value=X[column].mean())
 
-# Streamlit App
-st.title("Lebenserwartung Vorhersage")
-
-# Eingabeformular für Features
-inputs = {}
-for feature in X.columns:
-    inputs[feature] = st.number_input(f"{feature}", value=X[feature].mean())
-
-# Vorhersage machen
-input_data = pd.DataFrame([inputs])
-input_data_scaled = scaler.transform(input_data)
-prediction = model.predict(input_data_scaled)
-
-# Ergebnis anzeigen
-st.subheader("Vorhergesagte Lebenserwartung:")
-st.write(prediction[0])
+# Button zur Vorhersage
+if st.button('Lebenserwartung vorhersagen'):
+    prediction = predict_life_expectancy(input_data)
+    st.write(f'Vorhergesagte Lebenserwartung: {prediction:.2f} Jahre')
