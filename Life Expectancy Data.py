@@ -1,30 +1,27 @@
 import streamlit as st
 import pandas as pd
 import pickle
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import LabelEncoder
 
-# Laden der Daten
-@st.cache
-def load_data():
-    data = pd.read_csv("Life Expectancy Data.csv")
-    return data
-
-data = load_data()
-
-# Features und Zielvariable
-X = data.drop(['Life expectancy '], axis=1)
-y = data['Life expectancy ']
-
-# Modell initialisieren und trainieren
-rf_regressor = RandomForestRegressor(random_state=42)
-rf_regressor.fit(X, y)
+# Laden des trainierten Random Forest-Modells
+@st.cache(allow_output_mutation=True)
+def load_model():
+    with open('random_forest_model.pkl', 'rb') as file:
+        model = pickle.load(file)
+    return model
 
 # Funktion zur Vorhersage der Lebenserwartung
 def predict_life_expectancy(input_data):
     # Konvertierung der Eingabedaten in ein DataFrame
     input_df = pd.DataFrame([input_data])
     
+    # Kategorische Variablen mit LabelEncoder kodieren, falls erforderlich
+    # Beispiel:
+    # encoder = LabelEncoder()
+    # input_df['CategoricalFeature'] = encoder.fit_transform(input_df['CategoricalFeature'])
+
     # Vorhersage machen
+    rf_regressor = load_model()
     prediction = rf_regressor.predict(input_df)
     return prediction[0]
 
@@ -33,14 +30,16 @@ st.title('Lebenserwartungs-Vorhersagemodell')
 st.write('Bitte geben Sie die erforderlichen Informationen ein, um die Lebenserwartung vorherzusagen')
 
 # Eingabefelder für jedes Feature erstellen
-input_data = {}
-for column in X.columns:
-    if X[column].dtype == 'object':
-        input_data[column] = st.selectbox(f'Wähle {column}', X[column].unique())
-    else:
-        input_data[column] = st.number_input(f'Gib {column} ein', value=X[column].mean())
+# Füge hier Eingabefelder für jedes Feature hinzu, das dein Modell verwendet. Beispiel:
+age = st.number_input('Alter', min_value=0, max_value=120, value=30)
+bmi = st.number_input('BMI', min_value=10.0, max_value=50.0, value=22.0)
+# Füge weitere Eingabefelder gemäß deinem Datensatz hinzu
 
 # Button zur Vorhersage
 if st.button('Lebenserwartung vorhersagen'):
+    input_data = {'Age': age, 'BMI': bmi}  # Füge hier alle deine Features hinzu
     prediction = predict_life_expectancy(input_data)
     st.write(f'Vorhergesagte Lebenserwartung: {prediction:.2f} Jahre')
+
+# Denke daran, die Eingabefelder entsprechend den Features anzupassen, die dein Modell erfordert
+
